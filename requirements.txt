@@ -1,0 +1,8 @@
+flask
+flask-cors
+deepface
+tf-keras
+opencv-python-headless
+scipy
+python-dotenv
+gunicorn

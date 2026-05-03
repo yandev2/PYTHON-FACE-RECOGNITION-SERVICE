@@ -1,0 +1,44 @@
+name: Deploy Face Recognition AI
+
+on:
+  push:
+    branches: [ main ] # Sesuaikan jika branch Anda bernama 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # 1. Tentukan Variabel
+            APP_DIR="/var/www/face_recognition"
+            RELEASE_NAME=$(date +%Y%m%d%H%M%S)
+            RELEASE_DIR="$APP_DIR/releases/$RELEASE_NAME"
+
+            # 2. Buat folder release baru
+            mkdir -p $RELEASE_DIR
+
+            # 3. Clone repo ke folder release (atau copy file)
+            git clone https://github.com/${{ github.repository }}.git $RELEASE_DIR
+
+            # 4. Hubungkan Shared Resources (Venv, .env, Uploads)
+            ln -nfs $APP_DIR/shared/.env $RELEASE_DIR/.env
+            ln -nfs $APP_DIR/shared/uploads $RELEASE_DIR/uploads
+
+            # 5. Update Symlink 'current' ke rilis terbaru
+            ln -nfs $RELEASE_DIR $APP_DIR/current
+
+            # 6. Install dependencies (jika ada yang baru)
+            source $APP_DIR/shared/venv/bin/activate
+            pip install -r $RELEASE_DIR/requirements.txt
+
+            # 7. Restart Service agar kode baru aktif
+            sudo systemctl restart face_recognition
