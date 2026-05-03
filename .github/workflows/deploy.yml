@@ -13,7 +13,10 @@ jobs:
       - name: Create Deployment Artifact
         # Kita bungkus semua file kecuali venv, git, dan env lokal
         run: |
-          tar -czf app.tar.gz --exclude='app.tar.gz' --exclude='.git' --exclude='.github' --exclude='venv' --exclude='.env' .
+          tar -czf /tmp/app.tar.gz --exclude='.git' --exclude='.github' --exclude='venv' --exclude='.env' .
+          
+          # Pindahkan kembali ke folder project agar bisa di-upload sebagai artifact
+          mv /tmp/app.tar.gz
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
