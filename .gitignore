@@ -1,0 +1,18 @@
+# Paling Penting: Sembunyikan file konfigurasi sensitif
+.env
+
+# Sembunyikan folder Virtual Environment
+venv/
+env/
+/shared/venv/
+
+# Sembunyikan cache Python
+__pycache__/
+*.py[cod]
+
+# Sembunyikan folder upload foto agar tidak memenuhi repo
+uploads/
+/shared/uploads/
+
+# Sembunyikan file log
+*.log
