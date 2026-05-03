@@ -46,16 +46,21 @@ jobs:
 
       - name: Deploy Process
         run: |
-          # Variabel rilis unik
+          # Variabel di GitHub Runner
           REL=$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}
           APP_DIR="/var/www/face_recognition"
           
-          # Upload tarball ke folder releases
-          scp -P "${{ secrets.SSH_PORT }}" app.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/releases/tmp-$REL.tar.gz
+          scp -O -o StrictHostKeyChecking=no -P "${{ secrets.SSH_PORT }}" app.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$APP_DIR/releases/tmp-$REL.tar.gz
 
-          ssh -tt -p "${{ secrets.SSH_PORT }}" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          ssh -tt -o StrictHostKeyChecking=no -p "${{ secrets.SSH_PORT }}" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             set -e
-            cd $APP_DIR/releases
+            
+            # Oper variabel ke shell VPS
+            REL=$REL
+            APP_DIR=$APP_DIR
+            
+            # Gunakan \$ untuk semua variabel agar dibaca di VPS
+            cd \$APP_DIR/releases
             
             # Ekstrak rilis baru
             mkdir -p \$REL
@@ -64,31 +69,24 @@ jobs:
             cd \$REL
             
             # --- LINKING SHARED RESOURCES ---
-            # Pastikan folder uploads tersedia di shared
-            mkdir -p $APP_DIR/shared/uploads
+            mkdir -p \$APP_DIR/shared/uploads
             
-            # Link ke .env dan uploads yang ada di shared
-            ln -sfn $APP_DIR/shared/.env .env
-            ln -sfn $APP_DIR/shared/uploads uploads
+            ln -sfn \$APP_DIR/shared/.env .env
+            ln -sfn \$APP_DIR/shared/uploads uploads
 
             # --- FIX PERMISSIONS ---
-            # Set owner ke www-data agar seragam dengan Laravel/Nginx
             sudo chown -R www-data:www-data .
-            sudo chown -R www-data:www-data $APP_DIR/shared/uploads
-            sudo chmod -R 775 $APP_DIR/shared/uploads
+            sudo chown -R www-data:www-data \$APP_DIR/shared/uploads
+            sudo chmod -R 775 \$APP_DIR/shared/uploads
             
             # --- DEPENDENCIES ---
-            # Jalankan pip install menggunakan venv yang ada di shared
-            # Kita asumsikan venv sudah di-setup di /shared/venv seperti langkah awal kita
-            $APP_DIR/shared/venv/bin/pip install --upgrade pip
-            $APP_DIR/shared/venv/bin/pip install -r requirements.txt
+            \$APP_DIR/shared/venv/bin/pip install --upgrade pip
+            \$APP_DIR/shared/venv/bin/pip install -r requirements.txt
 
             # --- AKTIVASI ---
-            # Geser symlink 'current' ke folder rilis terbaru
-            ln -sfn $APP_DIR/releases/\$REL $APP_DIR/current
+            ln -sfn \$APP_DIR/releases/\$REL \$APP_DIR/current
             
             # --- RELOAD SERVICE ---
-            # Restart systemd agar Python membaca kode terbaru
             echo 'Restarting Python Service...'
             sudo systemctl restart face_recognition
             echo 'Deployment Successful!'
