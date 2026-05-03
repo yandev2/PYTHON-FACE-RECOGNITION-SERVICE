@@ -16,7 +16,7 @@ jobs:
           tar -czf /tmp/app.tar.gz --exclude='.git' --exclude='.github' --exclude='venv' --exclude='.env' .
           
           # Pindahkan kembali ke folder project agar bisa di-upload sebagai artifact
-          mv /tmp/app.tar.gz
+          mv /tmp/app.tar.gz .
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
